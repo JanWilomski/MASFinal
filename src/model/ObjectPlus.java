@@ -27,6 +27,10 @@ public abstract class ObjectPlus implements Serializable {
         return Collections.unmodifiableList(extent.get(c));
     }
 
+    public static void clearExtent(){
+        extent = new HashMap<>();
+    }
+
     public static void saveExtent() throws IOException {
         try(ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("extent"))) {
             oos.writeObject(extent);
