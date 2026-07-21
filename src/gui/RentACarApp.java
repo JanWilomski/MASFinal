@@ -6,6 +6,7 @@ import model.*;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -22,6 +23,14 @@ public class RentACarApp {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new RentACarApp().start());
+    }
+
+    public static void persist() {
+        try {
+            ObjectPlus.saveExtent();
+        } catch (IOException e) {
+            System.err.println("Błąd zapisu ekstensji: " + e.getMessage());
+        }
     }
 
     private void start() {
@@ -67,12 +76,7 @@ public class RentACarApp {
         }
         if (ObjectPlus.getExtentFromClass(Branch.class).isEmpty()) {
             seed();
-            try {
-                ObjectPlus.saveExtent();
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(null, "Nie udało się zapisać danych przykładowych.",
-                        "Zapis", JOptionPane.WARNING_MESSAGE);
-            }
+            persist();
         }
     }
 

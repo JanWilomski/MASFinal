@@ -113,12 +113,13 @@ public class SummaryPanel extends JPanel {
         try {
             SettlementType settlement = buildSettlement();
             buildPayment(rental, settlement);
-            ObjectPlus.saveExtent();
         } catch (Exception ex) {
             rental.delete();
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Błąd płatności", JOptionPane.ERROR_MESSAGE);
             return;
         }
+
+        RentACarApp.persist();
 
         JOptionPane.showMessageDialog(this,
                 "Wypożyczenie utworzone.\nStatus: " + rental.getStatus()
