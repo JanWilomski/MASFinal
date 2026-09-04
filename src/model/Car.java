@@ -128,11 +128,13 @@ public class Car extends ObjectPlus implements Serializable {
             return;
         }
         if (this.branch != null) {
-            this.branch.removeCar(this);
+            this.branch.removeCar(this);    // potrzebuje jeszcze starego parkingSpot do odnalezienia wpisu
         }
         this.branch = newBranch;
         if(newBranch != null){
             newBranch.addCar(this);
+        } else {
+            this.parkingSpot = null;        // auto bez oddziału nie ma miejsca parkingowego
         }
     }
 
@@ -140,6 +142,9 @@ public class Car extends ObjectPlus implements Serializable {
     public void addRental(Rental rental){
         if(rental == null){
             throw new IllegalArgumentException("Rental is null");
+        }
+        if(rental.getCar() != this){
+            throw new IllegalArgumentException("Rezerwacja nie należy do tego samochodu — powiązanie tworzy konstruktor Rental");
         }
         if(rentals.contains(rental)){
             return;
@@ -154,6 +159,9 @@ public class Car extends ObjectPlus implements Serializable {
         if(!rentals.contains(rental)){
             return;
         }
+        if(rental.getCar() == this){
+            throw new IllegalStateException("Rezerwacja wciąż powiązana z tym samochodem — użyj Rental.delete()");
+        }
         rentals.remove(rental);
     }
 
@@ -164,6 +172,9 @@ public class Car extends ObjectPlus implements Serializable {
     public void addServiceTicket(ServiceTicket serviceTicket){
         if(serviceTicket == null){
             throw new IllegalArgumentException("Service ticket is null");
+        }
+        if(serviceTicket.getCar() != this){
+            throw new IllegalArgumentException("Zgłoszenie nie dotyczy tego samochodu — powiązanie tworzy konstruktor ServiceTicket");
         }
         if(serviceTickets.contains(serviceTicket)){
             return;
@@ -177,6 +188,9 @@ public class Car extends ObjectPlus implements Serializable {
         }
         if(!serviceTickets.contains(serviceTicket)){
             return;
+        }
+        if(serviceTicket.getCar() == this){
+            throw new IllegalStateException("Zgłoszenie wciąż dotyczy tego samochodu — asocjacja jest obowiązkowa i nie da się jej rozpiąć");
         }
         serviceTickets.remove(serviceTicket);
     }
@@ -194,10 +208,17 @@ public class Car extends ObjectPlus implements Serializable {
         if (this.parkingSpot == null && newSpot == null) return;
         if (this.parkingSpot != null && this.parkingSpot.equals(newSpot)) return;
 
-        if (this.branch != null) {
-            this.branch.updateCarParkingSpot(newSpot, this);
+        // kolizję sprawdzamy PRZED mutacją, żeby syncCarSpot już nie mógł rzucić
+        if (this.branch != null && newSpot != null) {
+            Car occupant = this.branch.getCarAtSpot(newSpot);
+            if (occupant != null && occupant != this) {
+                throw new IllegalArgumentException("Spot " + newSpot + " is already taken");
+            }
         }
         this.parkingSpot = newSpot;
+        if (this.branch != null) {
+            this.branch.syncCarSpot(this);
+        }
     }
 
     // Car

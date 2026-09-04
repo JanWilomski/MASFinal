@@ -1,5 +1,6 @@
 package model;
 
+import enums.TicketState;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -81,6 +82,11 @@ public class Employee extends Person implements Serializable {
         if(serviceTicket == null){
             throw new IllegalArgumentException("Service ticket is null");
         }
+        // zwarcie logiczne chroni przed wywołaniem getAssignedEmployee() w złym stanie
+        if(serviceTicket.getState() != TicketState.IN_PROGRESS
+                || serviceTicket.getAssignedEmployee() != this){
+            throw new IllegalArgumentException("Zgłoszenie nie jest przypisane do tego pracownika — użyj ServiceTicket.takeTicket()");
+        }
         if(assignedTickets.contains(serviceTicket)){
             return;
         }
@@ -92,6 +98,10 @@ public class Employee extends Person implements Serializable {
         }
         if(!assignedTickets.contains(serviceTicket)){
             return;
+        }
+        if(serviceTicket.getState() == TicketState.IN_PROGRESS
+                && serviceTicket.getAssignedEmployee() == this){
+            throw new IllegalStateException("Zgłoszenie wciąż przypisane do tego pracownika — użyj ServiceTicket.closeTicket()");
         }
         assignedTickets.remove(serviceTicket);
     }

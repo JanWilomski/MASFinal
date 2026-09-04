@@ -24,7 +24,7 @@ public class  Rental extends ObjectPlus implements Serializable {
             setRentalEnd(rentalEnd);
             setCar(car);
             setClient(client);
-            checkAvailability(car, rentalStart, rentalEnd);
+            checkAvailability(car, rentalStart, rentalEnd, null);
             this.status = RentalStatus.RESERVED;
 
             car.addRental(this);
@@ -35,8 +35,11 @@ public class  Rental extends ObjectPlus implements Serializable {
         }
     }
 
-    private static void checkAvailability(Car car, LocalDate rentalStart, LocalDate rentalEnd){
+    private static void checkAvailability(Car car, LocalDate rentalStart, LocalDate rentalEnd, Rental exclude){
         for (Rental existingRental : car.getRentals()) {
+            if (existingRental == exclude) {
+                continue;
+            }
             if (existingRental.getStatus() == RentalStatus.CANCELLED) {
                 continue;
             }
@@ -126,8 +129,27 @@ public class  Rental extends ObjectPlus implements Serializable {
         return client;
     }
 
+    /**
+     * Jedyny publiczny sposób zmiany terminu. Settery dat są prywatne, bo omijały
+     * checkAvailability i pozwalały doprowadzić do nakładających się rezerwacji.
+     */
+    public void changePeriod(LocalDate newStart, LocalDate newEnd){
+        if(status != RentalStatus.RESERVED){
+            throw new IllegalStateException("Termin można zmienić tylko w stanie RESERVED");
+        }
+        if(newStart == null || newEnd == null){
+            throw new IllegalArgumentException("Daty nie mogą być null");
+        }
+        if(!newEnd.isAfter(newStart)){
+            throw new IllegalArgumentException("Data zakończenia musi być po dacie rozpoczęcia");
+        }
+        checkAvailability(car, newStart, newEnd, this);
+        this.rentalStart = newStart;
+        this.rentalEnd = newEnd;
+    }
+
     //settery
-    public void setRentalStart(LocalDate rentalStart){
+    private void setRentalStart(LocalDate rentalStart){
         if(rentalStart==null){
             throw new IllegalArgumentException("Rental start date is null");
         }else if(this.rentalEnd!=null){
@@ -138,7 +160,7 @@ public class  Rental extends ObjectPlus implements Serializable {
         this.rentalStart = rentalStart;
     }
 
-    public void setRentalEnd(LocalDate rentalEnd){
+    private void setRentalEnd(LocalDate rentalEnd){
         if (rentalEnd == null) {
             throw new IllegalArgumentException("Rental end date is null");
         }
@@ -171,6 +193,9 @@ public class  Rental extends ObjectPlus implements Serializable {
         if(payment == null){
             throw new IllegalArgumentException("Payment is null");
         }
+        if(payment.getRental() != this){
+            throw new IllegalArgumentException("Płatność nie należy do tej rezerwacji — powiązanie tworzy konstruktor Payment");
+        }
         if(payments.contains(payment)){
             return;
         }
@@ -183,6 +208,9 @@ public class  Rental extends ObjectPlus implements Serializable {
         }
         if(!payments.contains(payment)){
             return;
+        }
+        if(payment.getRental() == this){
+            throw new IllegalStateException("Płatność wciąż powiązana z tą rezerwacją — użyj Payment.delete()");
         }
         payments.remove(payment);
     }

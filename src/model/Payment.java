@@ -44,7 +44,8 @@ public abstract class Payment extends ObjectPlus implements Serializable {
     public Rental getRental(){ return rental; }
     public SettlementType getSettlementType(){ return settlementType; }
 
-    public void setAmount(BigDecimal amount){
+    // prywatne: zmiana kwoty po utworzeniu złamałaby niezmiennik CashPayment (receivedAmount >= amount)
+    private void setAmount(BigDecimal amount){
         if(amount == null || amount.compareTo(BigDecimal.ZERO) <= 0){
             throw new IllegalArgumentException("Amount must be positive");
         }

@@ -90,6 +90,9 @@ public class Client extends Person implements Serializable {
         if(rental == null){
             throw new IllegalArgumentException("Rental is null");
         }
+        if(rental.getClient() != this){
+            throw new IllegalArgumentException("Rezerwacja nie należy do tego klienta — powiązanie tworzy konstruktor Rental");
+        }
         if(rentals.contains(rental)){
             return;
         }
@@ -102,6 +105,9 @@ public class Client extends Person implements Serializable {
         }
         if(!rentals.contains(rental)){
             return;
+        }
+        if(rental.getClient() == this){
+            throw new IllegalStateException("Rezerwacja wciąż powiązana z tym klientem — użyj Rental.delete()");
         }
         rentals.remove(rental);
     }
@@ -149,6 +155,9 @@ public class Client extends Person implements Serializable {
     public void addServiceTicket(ServiceTicket serviceTicket) {
         if(serviceTicket == null){
             throw new IllegalArgumentException("Service ticket is null");
+        }
+        if(serviceTicket.getClient() != this){
+            throw new IllegalArgumentException("Zgłoszenie nie należy do tego klienta — powiązanie tworzy konstruktor ServiceTicket");
         }
         if(assignedTickets.contains(serviceTicket)){
             return;

@@ -104,19 +104,28 @@ public class Branch extends ObjectPlus implements Serializable {
         employee.setBranch(this);
     }
 
-    public void updateCarParkingSpot(Integer newSpot, Car car) {
+    /**
+     * Doprowadza mapę kwalifikowaną do zgodności z polem parkingSpot podanego auta.
+     * Miejsce nie jest parametrem — jedynym źródłem prawdy jest Car, dzięki czemu
+     * metoda jest idempotentna i nie potrafi wytworzyć niespójności.
+     */
+    public void syncCarSpot(Car car) {
         if (car == null) {
             throw new IllegalArgumentException("Car is null");
         }
-        Integer oldSpot = car.getParkingSpot();
-        if (newSpot != null && cars.containsKey(newSpot) && cars.get(newSpot) != car) {
-            throw new IllegalArgumentException("Spot " + newSpot + " is already taken");
+        if (car.getBranch() != this) {
+            throw new IllegalArgumentException("Auto nie należy do tego oddziału");
         }
-        if (oldSpot != null) {
-            cars.remove(oldSpot);
+        Integer desired = car.getParkingSpot();
+        if (desired != null) {
+            Car occupant = cars.get(desired);
+            if (occupant != null && occupant != car) {
+                throw new IllegalArgumentException("Spot " + desired + " is already taken");
+            }
         }
-        if (newSpot != null) {
-            cars.put(newSpot, car);
+        cars.values().removeIf(c -> c == car);
+        if (desired != null) {
+            cars.put(desired, car);
         }
     }
 
